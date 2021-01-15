@@ -289,7 +289,7 @@ void UpdateTeamNames()
 	}
 	
 	char previous_team_name[LONGEST_CLAN_NAME_LEN];
-	// Actually set the clan name for Jnirai if there was plurality.
+	// Actually set the clan name for Jinrai if there was plurality.
 	if (plurality_team_indices[INDEX_JINRAI] != -1) {
 		g_hCvar_JinraiName.GetString(previous_team_name, sizeof(previous_team_name));
 		// Only announce new team name if it was actually changed.
@@ -303,7 +303,7 @@ void UpdateTeamNames()
 		g_hCvar_JinraiName.SetString("Jinrai");
 	}
 	
-	// Actually updates the name for Jnirai if there was plurality.
+	// Actually updates the name for Jinrai if there was plurality.
 	if (plurality_team_indices[INDEX_NSF] != -1) {
 		g_hCvar_NsfName.GetString(previous_team_name, sizeof(previous_team_name));
 		// Only announce new team name if it was actually changed.
