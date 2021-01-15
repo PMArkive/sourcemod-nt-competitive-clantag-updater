@@ -82,7 +82,7 @@ public void OnPluginStart()
 	CreateConVar("sm_competitive_clantag_updater_version", PLUGIN_VERSION,
 		"NT Competitive Clantag Updater plugin version.", FCVAR_DONTRECORD);
 	
-	g_hCvar_ClantagUpdateMode = CreateConVar("sm_competitive_clantag_mode", "2",
+	g_hCvar_ClantagUpdateMode = CreateConVar("sm_competitive_clantag_mode", "3",
 		"Operation mode. 0: disabled, 1: only manual \"sm_team\" clantag setting, 2: only automatic clantag setting, 3: allow both manual and automatic clantag setting.",
 		_, true, CLANTAG_MODE_DISABLED * 1.0, true, LARGEST_CLANTAG_MODE * 1.0);
 	
