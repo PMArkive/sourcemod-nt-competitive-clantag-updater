@@ -6,7 +6,7 @@
 
 #pragma newdecls required
 
-#define PLUGIN_VERSION "0.1.1"
+#define PLUGIN_VERSION "0.2"
 
 public Plugin myinfo = {
 	name = "NT Competitive Clantag Updater",
@@ -244,10 +244,10 @@ void UpdateTeamNames()
 	int num_clan_players_in_team[NUM_TEAM_INDICES][NUM_TEAMS];
 	char client_name[MAX_NAME_LENGTH];
 	
-	for (int team = 0; team < NUM_TEAM_INDICES; ++team) {
+	for (int team_idx = 0; team_idx < NUM_TEAM_INDICES; ++team_idx) {
 		for (int client = 1; client <= MaxClients; ++client) {
 			// Can't detect bot names with GetClientName reliably, so filtering fake clients entirely here to avoid debug confusion.
-			if (!IsClientInGame(client) || IsFakeClient(client) || TeamIndexToTeamArrIndex(GetClientTeam(client)) != team) {
+			if (!IsClientInGame(client) || IsFakeClient(client) || TeamIndexToTeamArrIndex(GetClientTeam(client)) != team_idx) {
 				continue;
 			}
 			
@@ -270,14 +270,14 @@ void UpdateTeamNames()
 				continue;
 			}
 			
-			++num_clan_players_in_team[team][tag_index_contained_in_name];
+			++num_clan_players_in_team[team_idx][tag_index_contained_in_name];
 		}
 	}
 	
 	int plurality_team_indices[NUM_TEAM_INDICES];
-	for (int team = 0; team < NUM_TEAM_INDICES; ++team) {
-		plurality_team_indices[team] = GetPluralityOfArray(
-			num_clan_players_in_team[team], sizeof(num_clan_players_in_team[]));
+	for (int team_idx = 0; team_idx < NUM_TEAM_INDICES; ++team_idx) {
+		plurality_team_indices[team_idx] = GetPluralityOfArray(
+			num_clan_players_in_team[team_idx], sizeof(num_clan_players_in_team[]));
 	}
 	
 	// Teams had equal representation of clan players, or nobody is hailing a clan tag.
@@ -289,32 +289,24 @@ void UpdateTeamNames()
 	}
 	
 	char previous_team_name[LONGEST_CLAN_NAME_LEN];
-	// Actually set the clan name for Jinrai if there was plurality.
-	if (plurality_team_indices[INDEX_JINRAI] != -1) {
-		g_hCvar_JinraiName.GetString(previous_team_name, sizeof(previous_team_name));
-		// Only announce new team name if it was actually changed.
-		if (!StrEqual(previous_team_name, team_names[plurality_team_indices[INDEX_JINRAI]])) {
-			g_hCvar_JinraiName.SetString(team_names[plurality_team_indices[INDEX_JINRAI]]);
-			PrintToChatAll("%s Detected a team in Jinrai. Setting team name as: %s", g_sTag, team_names[plurality_team_indices[INDEX_JINRAI]]);
+	for (int team_idx = 0; team_idx < NUM_TEAM_INDICES; ++team_idx) {
+		// Actually set the clan name if there was plurality.
+		if (plurality_team_indices[team_idx] != -1) {
+			GetConVarString((team_idx == INDEX_JINRAI) ? g_hCvar_JinraiName : g_hCvar_NsfName, previous_team_name, sizeof(previous_team_name));
+			// Only announce new team name if it was actually changed.
+			if (!StrEqual(previous_team_name, team_names[plurality_team_indices[team_idx]])) {
+				SetConVarString((team_idx == INDEX_JINRAI) ? g_hCvar_JinraiName : g_hCvar_NsfName, team_names[plurality_team_indices[team_idx]]);
+				PrintToChatAll("%s Detected a team in %s. Setting the team name as: %s",
+					g_sTag,
+					(team_idx == INDEX_JINRAI) ? "Jinrai" : "NSF",
+					team_names[plurality_team_indices[team_idx]]);
+			}
 		}
-	}
-	// Can't determine Jinrai clan, silently restore name to default.
-	else {
-		g_hCvar_JinraiName.SetString("Jinrai");
-	}
-	
-	// Actually updates the name for Jinrai if there was plurality.
-	if (plurality_team_indices[INDEX_NSF] != -1) {
-		g_hCvar_NsfName.GetString(previous_team_name, sizeof(previous_team_name));
-		// Only announce new team name if it was actually changed.
-		if (!StrEqual(previous_team_name, team_names[plurality_team_indices[INDEX_NSF]])) {
-			g_hCvar_NsfName.SetString(team_names[plurality_team_indices[INDEX_NSF]]);
-			PrintToChatAll("%s Detected a team in NSF. Setting team name as: %s", g_sTag, team_names[plurality_team_indices[INDEX_NSF]]);
+		// Can't determine clan, silently restore name to default.
+		else {
+			SetConVarString((team_idx == INDEX_JINRAI) ? g_hCvar_JinraiName : g_hCvar_NsfName,
+				(team_idx == INDEX_JINRAI) ? "Jinrai" : "NSF");
 		}
-	}
-	// Can't determine NSF clan, silently restore name to default.
-	else {
-		g_hCvar_NsfName.SetString("NSF");
 	}
 }
 
