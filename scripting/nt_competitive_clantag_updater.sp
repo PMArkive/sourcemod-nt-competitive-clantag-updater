@@ -6,7 +6,7 @@
 
 #pragma newdecls required
 
-#define PLUGIN_VERSION "0.1"
+#define PLUGIN_VERSION "0.1.1"
 
 public Plugin myinfo = {
 	name = "NT Competitive Clantag Updater",
@@ -285,6 +285,7 @@ void UpdateTeamNames()
 	if (plurality_team_indices[INDEX_JINRAI] == plurality_team_indices[INDEX_NSF]) {
 		g_hCvar_JinraiName.SetString("Jinrai");
 		g_hCvar_NsfName.SetString("NSF");
+		return;
 	}
 	
 	char previous_team_name[LONGEST_CLAN_NAME_LEN];
