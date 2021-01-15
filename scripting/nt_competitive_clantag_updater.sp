@@ -97,6 +97,8 @@ public void OnPluginStart()
 	else if (!HookEventEx("player_changename", Event_PlayerChangeName, EventHookMode_Post)) {
 		SetFailState("Failed to hook event \"player_changename\"");
 	}
+	
+	AutoExecConfig();
 }
 
 public void OnAllConfigsExecuted()
