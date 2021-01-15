@@ -332,6 +332,7 @@ static int TeamIndexToTeamArrIndex(int team)
 //		- The array has less than 1 elements
 //		- The array has any elements with a negative value
 //		- The array has multiple elements with the largest value (ie. couldn't determine a single plurality)
+//		- Largest element in the array has a value of 0
 int GetPluralityOfArray(const int[] array, const int num_elements)
 {
 	int largest_index;
