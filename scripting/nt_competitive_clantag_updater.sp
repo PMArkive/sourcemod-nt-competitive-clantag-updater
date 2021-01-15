@@ -224,7 +224,7 @@ public void Event_PlayerChangeName(Event event, const char[] name, bool dontBroa
 }
 
 // Whenever you need to delay the name change check for whatever reason.
-public Action Timer_DelayedUpdateTeamNames(Handle timer, int userid)
+public Action Timer_DelayedUpdateTeamNames(Handle timer)
 {
 	UpdateTeamNames();
 	return Plugin_Stop;
