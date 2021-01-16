@@ -6,7 +6,7 @@
 
 #pragma newdecls required
 
-#define PLUGIN_VERSION "0.2"
+#define PLUGIN_VERSION "0.2.1"
 
 public Plugin myinfo = {
 	name = "NT Competitive Clantag Updater",
@@ -247,7 +247,13 @@ void UpdateTeamNames()
 	for (int team_idx = 0; team_idx < NUM_TEAM_INDICES; ++team_idx) {
 		for (int client = 1; client <= MaxClients; ++client) {
 			// Can't detect bot names with GetClientName reliably, so filtering fake clients entirely here to avoid debug confusion.
-			if (!IsClientInGame(client) || IsFakeClient(client) || TeamIndexToTeamArrIndex(GetClientTeam(client)) != team_idx) {
+			if (!IsClientInGame(client) || IsFakeClient(client)) {
+				continue;
+			}
+			
+			int team = GetClientTeam(client);
+			
+			if (team <= TEAM_SPECTATOR || TeamIndexToTeamArrIndex(team) != team_idx) {
 				continue;
 			}
 			
