@@ -264,6 +264,7 @@ void UpdateTeamNames()
 			for (int team_index = 0; team_index < sizeof(team_tags); ++team_index) {
 				int contains_pos = StrContains(client_name, team_tags[team_index], CLAN_TAGS_COMPARE_IS_CASE_SENSITIVE);
 				// Checking for charposes 0+n, because some clans use a "[TAG]" style or similar, where the tag is stylized/padded.
+				// Not checking for match in any char pos, because it could lead to false positive on very short tags.
 				if (contains_pos == 0 || contains_pos == 1 || contains_pos == 2) {
 					++num_tags_contained_in_name;
 					tag_index_contained_in_name = team_index;
