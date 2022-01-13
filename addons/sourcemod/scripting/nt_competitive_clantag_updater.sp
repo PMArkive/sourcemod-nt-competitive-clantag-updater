@@ -6,7 +6,7 @@
 
 #pragma newdecls required
 
-#define PLUGIN_VERSION "0.2.2"
+#define PLUGIN_VERSION "0.2.3"
 
 public Plugin myinfo = {
 	name = "NT Competitive Clantag Updater",
@@ -33,16 +33,16 @@ char g_sTag[] = "[TEAM]";
 char team_tags[NUM_TEAMS][] = {
 	"AHNS",
 	"BONK",
-	"PIGA",
-	"幽霊団",
+	"dF",
 	"NaT",
+	"NTST",
+	"NX",
+	"OP",
+	"PIGA",
+	"PR1SM",
 	"RENRAKU",
 	"RENRUKA",
-	"dF",
-	"OP",
-	"NTST",
-	"PR1SM",
-	"NX"
+	"幽霊団",
 };
 // Note that any names longer than TEAM_NAME_MAX_LEN (nt_competitive base define,
 // value 64) will get truncated by the comp plugin.
@@ -50,16 +50,16 @@ char team_tags[NUM_TEAMS][] = {
 char team_names[NUM_TEAMS][LONGEST_CLAN_NAME_LEN] = {
 	"All Hammer, No Sickle",
 	"Bonkurazu",
-	"Pwyllgor Imperialaeth Gwrth-Americanaidd",
-	"Ghost Brigade",
+	"Road To Deepfrog",
 	"NaT°",
+	"Near The Spinning Tree",
+	"NoXp",
+	"Sweaty Tryhard Operation Phoenix",
+	"Pwyllgor Imperialaeth Gwrth-Americanaidd",
+	"PR1SM",
 	"RENRAKU",
 	"RENRUKA",
-	"Road To Deepfrog",
-	"Sweaty Tryhard Operation Phoenix",
-	"Near The Spinning Tree",
-	"PR1SM",
-	"NoXp"
+	"Ghost Brigade",
 };
 
 ConVar g_hCvar_JinraiName = null, g_hCvar_NsfName = null;
