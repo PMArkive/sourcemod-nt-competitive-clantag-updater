@@ -6,7 +6,7 @@
 
 #pragma newdecls required
 
-#define PLUGIN_VERSION "0.2.2"
+#define PLUGIN_VERSION "0.2.4"
 
 public Plugin myinfo = {
 	name = "NT Competitive Clantag Updater",
@@ -18,8 +18,7 @@ public Plugin myinfo = {
 
 char g_sTag[] = "[TEAM]";
 
-// Based on the WW2021 registered teams.
-#define NUM_TEAMS 12
+#define NUM_TEAMS 16
 
 // Whether clan tag detection should be case sensitive.
 // Clan tags are only detected at the beginning of names,
@@ -33,16 +32,20 @@ char g_sTag[] = "[TEAM]";
 char team_tags[NUM_TEAMS][] = {
 	"AHNS",
 	"BONK",
+	"dF",
+	"FD-",
+	"Fumco",
+	"Ikko",
+	"NaT*",
+	"NTST",
+	"NX",
+	"OP",
 	"PIGA",
-	"幽霊団",
-	"NaT",
+	"PR1SM",
 	"RENRAKU",
 	"RENRUKA",
-	"dF",
-	"OP",
-	"NTST",
-	"PR1SM",
-	"NX"
+	"WH",
+	"幽霊団",
 };
 // Note that any names longer than TEAM_NAME_MAX_LEN (nt_competitive base define,
 // value 64) will get truncated by the comp plugin.
@@ -50,16 +53,20 @@ char team_tags[NUM_TEAMS][] = {
 char team_names[NUM_TEAMS][LONGEST_CLAN_NAME_LEN] = {
 	"All Hammer, No Sickle",
 	"Bonkurazu",
-	"Pwyllgor Imperialaeth Gwrth-Americanaidd",
-	"Ghost Brigade",
+	"Road To Deepfrog",
+	"FD",
+	"Fumco",
+	"Ikko-Ikki",
 	"NaT°",
+	"Near The Spinning Tree",
+	"NoXp",
+	"Sweaty Tryhard Operation Phoenix",
+	"Pwyllgor Imperialaeth Gwrth-Americanaidd",
+	"PR1SM",
 	"RENRAKU",
 	"RENRUKA",
-	"Road To Deepfrog",
-	"Sweaty Tryhard Operation Phoenix",
-	"Near The Spinning Tree",
-	"PR1SM",
-	"NoXp"
+	"Winter Handicap Gaming",
+	"Ghost Brigade",
 };
 
 ConVar g_hCvar_JinraiName = null, g_hCvar_NsfName = null;
@@ -72,7 +79,7 @@ enum {
 	CLANTAG_MODE_ONLY_MANUAL,
 	CLANTAG_MODE_ONLY_AUTOMATIC,
 	CLANTAG_MODE_BOTH,
-	
+
 	NUM_CLANTAG_MODES,
 	LARGEST_CLANTAG_MODE = (NUM_CLANTAG_MODES - 1)
 };
@@ -81,23 +88,23 @@ public void OnPluginStart()
 {
 	CreateConVar("sm_competitive_clantag_updater_version", PLUGIN_VERSION,
 		"NT Competitive Clantag Updater plugin version.", FCVAR_DONTRECORD);
-	
+
 	g_hCvar_ClantagUpdateMode = CreateConVar("sm_competitive_clantag_mode", "3",
 		"Operation mode. 0: disabled, 1: only manual \"sm_team\" clantag setting, 2: only automatic clantag setting, 3: allow both manual and automatic clantag setting.",
 		_, true, CLANTAG_MODE_DISABLED * 1.0, true, LARGEST_CLANTAG_MODE * 1.0);
-	
+
 	RegConsoleCmd("sm_team", Cmd_SetTeamName);
-	
+
 	RegAdminCmd("sm_list_clantags", Cmd_ListClantags, ADMFLAG_GENERIC,
 		"List current clantag bindings for confirming correctness.");
-	
+
 	if (!HookEventEx("player_team", Event_PlayerTeam, EventHookMode_Post)) {
 		SetFailState("Failed to hook event \"player_team\"");
 	}
 	else if (!HookEventEx("player_changename", Event_PlayerChangeName, EventHookMode_Post)) {
 		SetFailState("Failed to hook event \"player_changename\"");
 	}
-	
+
 	AutoExecConfig();
 }
 
@@ -134,23 +141,23 @@ public Action Cmd_SetTeamName(int client, int argc)
 		ReplyToCommand(client, "%s Usage: %s \"Team Name In Quotes\"", g_sTag, cmd_name);
 		return Plugin_Handled;
 	}
-	
+
 	int team = GetClientTeam(client);
 	if (team != TEAM_JINRAI && team != TEAM_NSF) {
 		ReplyToCommand(client, "%s This command can only be used by the playing teams.", g_sTag);
 		return Plugin_Handled;
 	}
-	
+
 	char team_name_before[LONGEST_CLAN_NAME_LEN];
 	GetConVarString((team == TEAM_JINRAI) ? g_hCvar_JinraiName : g_hCvar_NsfName,
 		team_name_before, sizeof(team_name_before));
-	
+
 	char team_name[LONGEST_CLAN_NAME_LEN];
 	if (GetCmdArg(1, team_name, sizeof(team_name)) < 1) {
 		ReplyToCommand(client, "%s Failed to parse the team name provided.", g_sTag);
 		return Plugin_Handled;
 	}
-	
+
 	if (StrEqual(team_name, ((team == TEAM_JINRAI) ? "NSF" : "Jinrai"), false)) {
 		ReplyToCommand(client, "%s %s can't use %s as their name.",
 			g_sTag,
@@ -158,12 +165,12 @@ public Action Cmd_SetTeamName(int client, int argc)
 			(team == TEAM_JINRAI) ? "NSF" : "Jinrai");
 		return Plugin_Handled;
 	}
-	
+
 	SetConVarString((team == TEAM_JINRAI) ? g_hCvar_JinraiName : g_hCvar_NsfName, team_name);
-	
+
 	char client_name[MAX_NAME_LENGTH];
 	GetClientName(client, client_name, sizeof(client_name));
-	
+
 	// Competitive plugin may forbid the team cvar name change,
 	// usually if trying to set team name identical to the opponent's team name.
 	// Checking for that case here to avoid confusion.
@@ -174,13 +181,13 @@ public Action Cmd_SetTeamName(int client, int argc)
 		ReplyToCommand(client, "%s Are you trying to set your name to same value as the other team, or was your team name already set?", g_sTag);
 		return Plugin_Handled;
 	}
-	
+
 	PrintToChatAll("%s Player %s has set %s team name to: %s",
 		g_sTag,
 		client_name,
 		(team == TEAM_JINRAI) ? "Jinrai" : "NSF",
 		team_name);
-	
+
 	return Plugin_Handled;
 }
 
@@ -198,9 +205,9 @@ public Action Cmd_ListClantags(int client, int argc)
 			g_sTag, team_names[team], team_tags[team]);
 	}
 	PrintToConsole(client, " ");
-	
+
 	ReplyToCommand(client, "%s Clan tags have been listed in your console.", g_sTag);
-	
+
 	return Plugin_Handled;
 }
 
@@ -237,28 +244,28 @@ void UpdateTeamNames()
 	if (g_hCvar_ClantagUpdateMode.IntValue <= CLANTAG_MODE_ONLY_MANUAL) {
 		return;
 	}
-	
+
 #define INDEX_JINRAI 0
 #define INDEX_NSF 1
 #define NUM_TEAM_INDICES 2
 	int num_clan_players_in_team[NUM_TEAM_INDICES][NUM_TEAMS];
 	char client_name[MAX_NAME_LENGTH];
-	
+
 	for (int team_idx = 0; team_idx < NUM_TEAM_INDICES; ++team_idx) {
 		for (int client = 1; client <= MaxClients; ++client) {
 			// Can't detect bot names with GetClientName reliably, so filtering fake clients entirely here to avoid debug confusion.
 			if (!IsClientInGame(client) || IsFakeClient(client)) {
 				continue;
 			}
-			
+
 			int team = GetClientTeam(client);
-			
+
 			if (team <= TEAM_SPECTATOR || TeamIndexToTeamArrIndex(team) != team_idx) {
 				continue;
 			}
-			
+
 			GetClientName(client, client_name, sizeof(client_name));
-			
+
 			int num_tags_contained_in_name = 0;
 			int tag_index_contained_in_name;
 			for (int team_index = 0; team_index < sizeof(team_tags); ++team_index) {
@@ -270,23 +277,23 @@ void UpdateTeamNames()
 					tag_index_contained_in_name = team_index;
 				}
 			}
-			
+
 			// Either no tag was recognized, or multiple tags were.
 			// In any case, can't figure out which team tag this player actually hails.
 			if (num_tags_contained_in_name != 1) {
 				continue;
 			}
-			
+
 			++num_clan_players_in_team[team_idx][tag_index_contained_in_name];
 		}
 	}
-	
+
 	int plurality_team_indices[NUM_TEAM_INDICES];
 	for (int team_idx = 0; team_idx < NUM_TEAM_INDICES; ++team_idx) {
 		plurality_team_indices[team_idx] = GetPluralityOfArray(
 			num_clan_players_in_team[team_idx], sizeof(num_clan_players_in_team[]));
 	}
-	
+
 	// Teams had equal representation of clan players, or nobody is hailing a clan tag.
 	// Can't detect team names in this case, so silently reset both teams to default name.
 	if (plurality_team_indices[INDEX_JINRAI] == plurality_team_indices[INDEX_NSF]) {
@@ -294,7 +301,7 @@ void UpdateTeamNames()
 		g_hCvar_NsfName.SetString("NSF");
 		return;
 	}
-	
+
 	char previous_team_name[LONGEST_CLAN_NAME_LEN];
 	for (int team_idx = 0; team_idx < NUM_TEAM_INDICES; ++team_idx) {
 		// Actually set the clan name if there was plurality.
@@ -336,7 +343,7 @@ int GetPluralityOfArray(const int[] array, const int num_elements)
 {
 	int largest_index;
 	int num_with_largest_index;
-	
+
 	for (int i = 0; i < num_elements; ++i) {
 		if (array[i] < 0) {
 			return -1;
@@ -352,6 +359,6 @@ int GetPluralityOfArray(const int[] array, const int num_elements)
 			num_with_largest_index = 1;
 		}
 	}
-	
+
 	return num_with_largest_index == 1 ? largest_index : -1;
 }
