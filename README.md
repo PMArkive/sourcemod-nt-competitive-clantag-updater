@@ -3,7 +3,7 @@ A complementary SM plugin for the Neotokyo competitive plugin. Sets competitive 
 
 # Building
 ## Requirements
-* SourceMod
+* SourceMod 1.10 or newer
 * [Neotokyo include](https://github.com/softashell/sourcemod-nt-include/blob/master/scripting/include/neotokyo.inc)
 
 # Installation
