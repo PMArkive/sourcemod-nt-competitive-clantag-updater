@@ -5,7 +5,7 @@
 #pragma newdecls required
 
 
-#define PLUGIN_VERSION "0.3.2"
+#define PLUGIN_VERSION "0.4.0"
 
 #define NEO_MAX_PLAYERS 32
 
@@ -162,7 +162,8 @@ public void OnClientDisconnect(int client)
 {
 	if (IsPlayerTeam(GetClientTeam(client)))
 	{
-		UpdateTeamNames();
+		// Too early to reliably have the new name set at this point, so delay with a timer.
+		CreateTimer(1.0, Timer_DelayedUpdateTeamNames);
 	}
 }
 
