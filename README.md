@@ -1,10 +1,14 @@
 # sourcemod-nt-competitive-clantag-updater
 A complementary SM plugin for the Neotokyo competitive plugin. Sets competitive team names automatically based on clantags.
 
-# Building
-## Requirements
+# Requirements
+
+## Building
 * SourceMod 1.10 or newer
 * [Neotokyo include](https://github.com/softashell/sourcemod-nt-include/blob/master/scripting/include/neotokyo.inc)
+
+## Plugins
+* Server must be running the [nt_competitive](https://github.com/Rainyan/sourcemod-nt-competitive) plugin
 
 # Installation
 * Place the compiled plugin .smx binary in the `addons/sourcemod/plugins` directory.
