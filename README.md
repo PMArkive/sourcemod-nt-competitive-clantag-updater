@@ -7,8 +7,8 @@ A complementary SM plugin for the Neotokyo competitive plugin. Sets competitive 
 * [Neotokyo include](https://github.com/softashell/sourcemod-nt-include/blob/master/scripting/include/neotokyo.inc)
 
 # Installation
-* Place the compiled plugin .smx binary in the `sourcemod/addons/plugins` directory.
-* Place the config file in the `sourcemod/configs` directory.
+* Place the compiled plugin .smx binary in the `addons/sourcemod/plugins` directory.
+* Place the config file in the `addons/sourcemod/configs` directory.
 
 # Configuration
 
