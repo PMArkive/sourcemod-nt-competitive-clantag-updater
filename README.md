@@ -30,6 +30,8 @@ A complementary SM plugin for the Neotokyo competitive plugin. Sets competitive 
 ## Config file format
 The config uses the Valve KeyValues format.
 
+Root key name: `"cfg_clantags"`
+
 Team entry syntax:
 ```c
 "team"
