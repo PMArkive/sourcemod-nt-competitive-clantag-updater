@@ -276,9 +276,11 @@ bool IsPlayerTeam(int team)
 
 public void Event_PlayerTeam(Event event, const char[] name, bool dontBroadcast)
 {
+#if DEBUG
 	PrintToServer("Event_PlayerTeam: %d, %d",
 		event.GetInt("team"),
 		event.GetInt("oldteam"));
+#endif
 	// Only trigger when someone joins a playable team.
 	if (IsPlayerTeam(event.GetInt("team")) || IsPlayerTeam(event.GetInt("oldteam")))
 	{
