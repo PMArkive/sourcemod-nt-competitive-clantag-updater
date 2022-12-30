@@ -461,7 +461,7 @@ void UpdateTeamNames(bool force = false)
 // We sort by amount of clients hailing each clans' clantag.
 //
 // Filters must contain a valid DataPack with structure:
-//     <int> team index filter
+//     <int> team index filter,
 //     <char[]> clantag block filter,
 //
 // The team index filter only processes clients of that team.
