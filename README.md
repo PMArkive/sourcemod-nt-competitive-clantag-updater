@@ -36,11 +36,12 @@ Team entry syntax:
 ```c
 "team"
 {
-	// Full name of the team. Clamped at 64 chars.
+	// Full name of the team. Clamped at 64 chars. Must be longer than 0 chars.
 	"name"	"Oxygen Enjoyers"
 
 	// The clantag, without any surrounding character art.
 	// Maximum clantag length is 12 chars.
+	// Minimum clantag length is 2 chars.
 	// Maximum of 2 leading "vanity chars" supported;
 	// eg. this would also match "<{OXY}>",
 	// but not "<{(OXY)}>".
