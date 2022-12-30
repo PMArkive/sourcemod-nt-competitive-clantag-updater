@@ -459,12 +459,15 @@ void UpdateTeamNames(bool force = false)
 
 // Sort comparison function for ADT Array elements of the Clans array.
 // We sort by amount of clients hailing each clans' clantag.
-// If filters is defined, it must contain a team index and a clantag string.
+//
+// Filters must contain a DataPack with structure:
+//     <int> team index,
+//     <char[]> clantag block filter,
+//
 // The team index filter only processes clients of that team.
 // The clantag filter will ignore the clan using that clantag.
 // If you don't want to filter by clantag, pass in an empty string for it.
-// This function has the side effect of updating the _num_members member
-// variable of each associated Clan in the array.
+//
 // Returns: qsort return value
 int SortClans(int index1, int index2, Handle array, Handle filters)
 {
