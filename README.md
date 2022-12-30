@@ -10,7 +10,20 @@ A complementary SM plugin for the Neotokyo competitive plugin. Sets competitive 
 * Place the compiled plugin .smx binary in the `sourcemod/addons/plugins` directory.
 * Place the config file in the `sourcemod/configs` directory.
 
-# Config format
+# Configuration
+
+## Cvars
+* `sm_competitive_clantag_mode`: Operation mode. 0: disabled, 1: only manual "sm_team" clantag setting, 2: only automatic clantag setting, 3: allow both manual and automatic clantag setting.
+* `sm_competitive_clantag_cfg_file`: Clantags config file name. Relative to SourceMod's "configs" folder. Must exist. Changing this value will force a clantags config reload.
+
+## User commands:
+* `sm_team`: If "sm_competitive_clantag_mode" allows manual team setting, this can be used to manually set your team's name.
+
+## Admin commands:
+* `sm_reload_clantags`: Reload the clantags config from disk.
+* `sm_list_clantags`: List current clantag bindings for confirming correctness.
+
+## Config file format
 The config uses the Valve KeyValues format.
 
 Team entry syntax:
