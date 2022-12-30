@@ -51,8 +51,8 @@ enum struct Clan {
 	// whitespace-separated, so "James" would not trigger this false positive.
 	bool case_sensitive;
 
-	// For a given valid client index, returns whether the client's name
-	// matches this clan's clantag pattern.
+	// For a given valid, connected client index, returns whether the client's
+	// name matches this clan's clantag pattern.
 	// The clantag text is allowed to be offset from the name start
 	// by max_decorator_offset chars, at most. Eg: "<(CLAN)>" would require
 	// an offset of at least two for the "CLAN" part to be detected.
