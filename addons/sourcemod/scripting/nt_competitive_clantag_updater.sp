@@ -5,7 +5,7 @@
 #pragma newdecls required
 
 
-#define PLUGIN_VERSION "0.3.1"
+#define PLUGIN_VERSION "0.3.2"
 
 #define NEO_MAX_PLAYERS 32
 
@@ -20,7 +20,7 @@
 #define CLANTAGS_CFG_VERSION 1
 #define CMD_LIST_CLANS "sm_list_clantags"
 
-#define DEBUG true
+#define DEBUG false
 
 // TODO: if bot -> try get client cvar "name" -> try get clientinfo
 
