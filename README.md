@@ -17,8 +17,8 @@ A complementary SM plugin for the Neotokyo competitive plugin. Sets competitive 
 # Configuration
 
 ## Cvars
-* `sm_competitive_clantag_mode`: Operation mode. 0: disabled, 1: only manual "sm_team" clantag setting, 2: only automatic clantag setting, 3: allow both manual and automatic clantag setting.
-* `sm_competitive_clantag_cfg_file`: Clantags config file name. Relative to SourceMod's "configs" folder. Must exist. Changing this value will force a clantags config reload.
+* `sm_competitive_clantag_mode`: Operation mode. 0: disabled, 1: only manual "sm_team" clantag setting, 2: only automatic clantag setting, 3: allow both manual and automatic clantag setting. Default: `3`
+* `sm_competitive_clantag_cfg_file`: Clantags config file name. Relative to SourceMod's "configs" folder. Must exist. Changing this value will force a clantags config reload. Default: `clantags.cfg`
 
 ## User commands:
 * `sm_team`: If "sm_competitive_clantag_mode" allows manual team setting, this can be used to manually set your team's name.
