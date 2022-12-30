@@ -143,12 +143,6 @@ public void OnPluginStart()
 	ReadClanConfig();
 }
 
-public void CvarChanged_ConfigPath(ConVar convar, const char[] oldValue, const char[] newValue)
-{
-	ReadClanConfig();
-	UpdateTeamNames(true);
-}
-
 public void OnAllConfigsExecuted()
 {
 	// OnAllConfigsExecuted implies OnAllPluginsLoaded, so this is safe to call here.
@@ -162,6 +156,20 @@ public void OnAllPluginsLoaded()
 	if (g_hCvar_JinraiName == null || g_hCvar_NsfName == null) {
 		SetFailState("Failed to find the competitive NT plugin cvars required. Is competitive plugin enabled?");
 	}
+}
+
+public void OnClientDisconnect(int client)
+{
+	if (IsPlayerTeam(GetClientTeam(client)))
+	{
+		UpdateTeamNames();
+	}
+}
+
+public void CvarChanged_ConfigPath(ConVar convar, const char[] oldValue, const char[] newValue)
+{
+	ReadClanConfig();
+	UpdateTeamNames(true);
 }
 
 public Action Cmd_SetTeamName(int client, int argc)
@@ -263,12 +271,21 @@ public Action Cmd_ListClantags(int client, int argc)
 	return Plugin_Handled;
 }
 
+bool IsPlayerTeam(int team)
+{
+	return team == TEAM_JINRAI || team == TEAM_NSF;
+}
+
 public void Event_PlayerTeam(Event event, const char[] name, bool dontBroadcast)
 {
-	// Only need to update teams if Jinrai or NSF had a player change.
-	// This will also detect relevant player disconnects.
-	if (event.GetInt("team") > TEAM_SPECTATOR || event.GetInt("oldteam") > TEAM_SPECTATOR) {
-		UpdateTeamNames();
+	PrintToServer("Event_PlayerTeam: %d, %d",
+		event.GetInt("team"),
+		event.GetInt("oldteam"));
+	// Only trigger when someone joins a playable team.
+	if (IsPlayerTeam(event.GetInt("team")) || IsPlayerTeam(event.GetInt("oldteam")))
+	{
+		// Too early to reliably have the new name set at this point, so delay with a timer.
+		CreateTimer(1.0, Timer_DelayedUpdateTeamNames);
 	}
 }
 
@@ -395,7 +412,14 @@ void UpdateTeamNames(bool force = false)
 	}
 
 	char ignore_clan[MAX_CLAN_TAG_LEN];
-	char previous_team_name[MAX_CLAN_NAME_LEN];
+	char previous_team_name_jinrai[MAX_CLAN_NAME_LEN];
+	char previous_team_name_nsf[MAX_CLAN_NAME_LEN];
+	g_hCvar_JinraiName.GetString(previous_team_name_jinrai, sizeof(previous_team_name_jinrai));
+	g_hCvar_NsfName.GetString(previous_team_name_nsf, sizeof(previous_team_name_nsf));
+
+	g_hCvar_JinraiName.RestoreDefault();
+	g_hCvar_NsfName.RestoreDefault();
+
 	Clan clan;
 	for (int team = TEAM_JINRAI; team <= TEAM_NSF; ++team)
 	{
@@ -411,26 +435,23 @@ void UpdateTeamNames(bool force = false)
 		delete filters;
 
 		ConVar team_cvar = (team == TEAM_NSF) ? g_hCvar_NsfName : g_hCvar_JinraiName;
-		team_cvar.GetString(previous_team_name, sizeof(previous_team_name));
 
 		if (num_members == 0)
 		{
-			team_cvar.RestoreDefault();
+			continue;
 		}
-		else
+
+		g_rClans.GetArray(0, clan, sizeof(clan));
+		strcopy(ignore_clan, sizeof(ignore_clan), clan.tag);
+		// Only announce new team name if it was actually changed.
+		if (!StrEqual(((team == TEAM_NSF) ? previous_team_name_nsf : previous_team_name_jinrai), clan.name))
 		{
-			g_rClans.GetArray(0, clan, sizeof(clan));
-			strcopy(ignore_clan, sizeof(ignore_clan), clan.tag);
-			// Only announce new team name if it was actually changed.
-			if (!StrEqual(previous_team_name, clan.name))
-			{
-				team_cvar.SetString(clan.name);
-				PrintToChatAll("%s Detected a team in %s. Setting the team name as: %s",
-					g_sTag,
-					(team == TEAM_NSF) ? "NSF" : "Jinrai",
-					clan.name
-				);
-			}
+			team_cvar.SetString(clan.name);
+			PrintToChatAll("%s Detected a team in %s. Setting the team name as: %s",
+				g_sTag,
+				(team == TEAM_NSF) ? "NSF" : "Jinrai",
+				clan.name
+			);
 		}
 	}
 }
@@ -443,7 +464,7 @@ void UpdateTeamNames(bool force = false)
 // If you don't want to filter by clantag, pass in an empty string for it.
 // This function has the side effect of updating the _num_members member
 // variable of each associated Clan in the array.
-// Returns: FIXME
+// Returns: qsort return value
 int SortClans(int index1, int index2, Handle array, Handle filters)
 {
 	int team_index_pass_filter;
