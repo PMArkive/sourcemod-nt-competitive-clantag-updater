@@ -5,7 +5,7 @@
 #pragma newdecls required
 
 
-#define PLUGIN_VERSION "0.4.0"
+#define PLUGIN_VERSION "0.4.1"
 
 #define NEO_MAX_PLAYERS 32
 
@@ -500,12 +500,9 @@ int SortClans(int index1, int index2, Handle array, Handle filters)
 		}
 
 		int team = GetClientTeam(client);
-		if (filters != INVALID_HANDLE)
+		if (team != team_index_pass_filter)
 		{
-			if (team != team_index_pass_filter)
-			{
-				continue;
-			}
+			continue;
 		}
 		else if (team <= TEAM_SPECTATOR)
 		{
