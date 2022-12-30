@@ -468,10 +468,12 @@ void UpdateTeamNames(bool force = false)
 // The clantag filter will ignore the clan using that clantag.
 // If you don't want to filter by clantag, pass in an empty string for it.
 //
-// This function has the side effect of pushing the number of teams
-// in the favorably sorted index as an int to the head of the filters DataPack.
-// DataPack Position after calling this function is not guaranteed;
-// you'll most likely want to .Reset() before reaccessing.
+// Side effects:
+//     * This function has the side effect of pushing the number of teams
+//     in the favorably sorted index as an int to the head of the filters DataPack
+//     (if both teams had equal number of players, will push 0 instead).
+//     * DataPack Position after calling this function is not guaranteed;
+//     you'll most likely want to .Reset() before reaccessing.
 //
 // Returns: qsort return value
 int SortClans(int index1, int index2, Handle array, Handle filters)
