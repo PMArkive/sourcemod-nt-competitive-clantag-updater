@@ -5,7 +5,7 @@
 #pragma newdecls required
 
 
-#define PLUGIN_VERSION "0.4.1"
+#define PLUGIN_VERSION "0.4.2"
 
 #define NEO_MAX_PLAYERS 32
 
@@ -218,9 +218,6 @@ public Action Cmd_SetTeamName(int client, int argc)
 
 	SetConVarString((team == TEAM_JINRAI) ? g_hCvar_JinraiName : g_hCvar_NsfName, team_name);
 
-	char client_name[MAX_NAME_LENGTH];
-	GetClientName(client, client_name, sizeof(client_name));
-
 	// Competitive plugin may forbid the team cvar name change,
 	// usually if trying to set team name identical to the opponent's team name.
 	// Checking for that case here to avoid confusion.
@@ -232,9 +229,9 @@ public Action Cmd_SetTeamName(int client, int argc)
 		return Plugin_Handled;
 	}
 
-	PrintToChatAll("%s Player %s has set %s team name to: %s",
+	PrintToChatAll("%s Player %N has set %s team name to: %s",
 		g_sTag,
-		client_name,
+		client,
 		(team == TEAM_JINRAI) ? "Jinrai" : "NSF",
 		team_name);
 
