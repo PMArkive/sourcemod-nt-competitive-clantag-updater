@@ -71,13 +71,14 @@ enum struct Clan {
 			return false;
 		}
 
-		// Name must include characters other than just the clantag,
-		// because otherwise a player whose name exactly matches
-		// some team's clantag will trigger a false positive.
 		char name_sans_clantag[MAX_NAME_LENGTH];
 		strcopy(name_sans_clantag, sizeof(name_sans_clantag),
 			client_name[pos + strlen(this.tag)]);
 
+		// If there was no whitespace separator between the tag and the name,
+		// this is not a valid clantag. We enforce whitespace separation
+		// because otherwise names like "James" would clash with the
+		// clantag "Jam", causing hard-to-avoid false positives.
 		int l = strlen(name_sans_clantag);
 		bool had_whitespace = false;
 		for (int i = 0; i < l; ++i)
@@ -88,15 +89,14 @@ enum struct Clan {
 				break;
 			}
 		}
-		// If there was no whitespace separator between the tag and the name,
-		// this is not a valid clantag. We enforce whitespace separation
-		// because otherwise names like "James" would clash with the
-		// clantag "Jam", causing hard-to-avoid false positives.
 		if (!had_whitespace)
 		{
 			return false;
 		}
 
+		// Name must include characters other than just the clantag,
+		// because otherwise a player whose name exactly matches
+		// some team's clantag will trigger a false positive.
 		TrimString(name_sans_clantag);
 		if (strlen(name_sans_clantag) == 0)
 		{
