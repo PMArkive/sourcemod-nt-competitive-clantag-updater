@@ -5,7 +5,7 @@
 #pragma newdecls required
 
 
-#define PLUGIN_VERSION "0.4.3"
+#define PLUGIN_VERSION "0.5.0"
 
 #define NEO_MAX_PLAYERS 32
 
@@ -97,6 +97,19 @@ enum struct Clan {
 		}
 
 		return true;
+	}
+
+	bool HasAnyMembers()
+	{
+		int num_members = 0;
+		for (int client = 1; client <= MaxClients; ++client)
+		{
+			if (IsClientInGame(client) && this.IsMember(client))
+			{
+				++num_members;
+			}
+		}
+		return num_members > 0;
 	}
 }
 
@@ -412,6 +425,7 @@ void UpdateTeamNames(bool force = false)
 	}
 
 	char ignore_clan[MAX_CLAN_TAG_LEN];
+	char other_clan_new_tag[MAX_CLAN_TAG_LEN];
 	char previous_team_name_jinrai[MAX_CLAN_NAME_LEN];
 	char previous_team_name_nsf[MAX_CLAN_NAME_LEN];
 	g_hCvar_JinraiName.GetString(previous_team_name_jinrai, sizeof(previous_team_name_jinrai));
@@ -421,58 +435,86 @@ void UpdateTeamNames(bool force = false)
 	g_hCvar_NsfName.RestoreDefault();
 
 	Clan clan;
+	ArrayList filters = new ArrayList();
 	for (int team = TEAM_JINRAI; team <= TEAM_NSF; ++team)
 	{
-		DataPack filters = new DataPack();
-		filters.WriteCell(team);
-		filters.WriteString(ignore_clan);
+		filters.Clear();
+		filters.Push(team);  // Only look for members in this team
+		filters.PushString(ignore_clan);  // Don't look for this clan (skipped if empty)
 		SortADTArrayCustom(g_rClans, SortClans, filters);
-		filters.Reset();
-		filters.ReadCell();
-		char dummy[1];
-		filters.ReadString(dummy, sizeof(dummy));
-		int num_members = filters.ReadCell();
-		delete filters;
-
-		ConVar team_cvar = (team == TEAM_NSF) ? g_hCvar_NsfName : g_hCvar_JinraiName;
-
-		if (num_members == 0)
+#if DEBUG
+		g_rClans.GetArray(0, clan, sizeof(clan));
+		PrintToServer("Team %s: %s", (team == TEAM_NSF) ? "NSF" : "Jinrai", clan.tag);
+#endif
+		// Erase the two filters pushed initially,
+		// because we want to sort all the values our custom sort
+		// has pushed to the end of the array.
+		filters.Erase(0);
+		filters.Erase(0);
+		filters.Sort(Sort_Descending, Sort_Integer);
+		// Amount of clan members in the top sorted team.
+		if (filters.Length == 0 || filters.Get(0) == 0)
 		{
+			// If we got none, the team has no clan in it.
 			continue;
 		}
 
-		g_rClans.GetArray(0, clan, sizeof(clan));
-		strcopy(ignore_clan, sizeof(ignore_clan), clan.tag);
-		// Only announce new team name if it was actually changed.
-		if (!StrEqual(((team == TEAM_NSF) ? previous_team_name_nsf : previous_team_name_jinrai), clan.name))
+		for (int i = 0; i < g_rClans.Length; ++i)
 		{
-			team_cvar.SetString(clan.name);
-			PrintToChatAll("%s Detected a team in %s. Setting the team name as: %s",
-				g_sTag,
-				(team == TEAM_NSF) ? "NSF" : "Jinrai",
-				clan.name
-			);
+			g_rClans.GetArray(i, clan, sizeof(clan));
+			// The other team already claimed this clan
+			if (StrEqual(other_clan_new_tag, clan.tag, clan.case_sensitive))
+			{
+				continue;
+			}
+			if (!clan.HasAnyMembers())
+			{
+				// Because these are sorted, if there's no clan members in this index,
+				// we know there won't be any in any of the following either, so break early.
+				break;
+			}
+
+			// Only announce new team name if it was actually changed.
+			if (!StrEqual(((team == TEAM_NSF) ? previous_team_name_nsf : previous_team_name_jinrai), clan.name))
+			{
+				ConVar team_cvar = (team == TEAM_NSF) ? g_hCvar_NsfName : g_hCvar_JinraiName;
+				team_cvar.SetString(clan.name);
+				PrintToChatAll("%s Detected a team in %s. Setting the team name as: %s",
+					g_sTag,
+					(team == TEAM_NSF) ? "NSF" : "Jinrai",
+					clan.name
+				);
+			}
+			// "Claim" this team as taken, so the sort for the other team will ignore it.
+			// This avoids both teams getting the same clan tag if there's members on both.
+			strcopy(ignore_clan, sizeof(ignore_clan), clan.tag);
+
+			break;
 		}
 	}
+	delete filters;
 }
 
 // Sort comparison function for ADT Array elements of the Clans array.
 // We sort by amount of clients hailing each clans' clantag.
 //
-// Filters must contain a valid DataPack with structure:
-//     <int> team index filter,
-//     <char[]> clantag block filter,
+// Filters must contain a valid ArrayList with structure:
+//     Index 0: <cell> team index filter,
+//     Index 1: <string> clantag block filter,
 //
 // The team index filter only processes clients of that team.
-// The clantag filter will ignore the clan using that clantag.
+// The clantag filter will ignore the clan using that clantag,
+// using the case sensitivity rules associated with that clan.
 // If you don't want to filter by clantag, pass in an empty string for it.
 //
 // Side effects:
-//     * This function has the side effect of pushing the number of teams
-//     in the favorably sorted index as an int to the head of the filters DataPack
-//     (if both teams had equal number of players, will push 0 instead).
-//     * DataPack Position after calling this function is not guaranteed;
-//     you'll most likely want to .Reset() before reaccessing.
+//     * This function may write 1 or more cells at the head of the
+//       filters array. These values are the number of clients found
+//       using the clantag that won the sort. Once the sort is complete,
+//       you can sort these numbers descending to figure out if there's
+//       any clients in any team. Note that the same clan may get sorted
+//       multiple times, so these cells will not directly relate to the
+//       sorted Clan array.
 //
 // Returns: qsort return value
 int SortClans(int index1, int index2, Handle array, Handle filters)
@@ -480,9 +522,8 @@ int SortClans(int index1, int index2, Handle array, Handle filters)
 	int team_index_pass_filter;
 	char clantag_block_filter[MAX_CLAN_TAG_LEN];
 
-	view_as<DataPack>(filters).Reset();
-	team_index_pass_filter = view_as<DataPack>(filters).ReadCell();
-	view_as<DataPack>(filters).ReadString(clantag_block_filter, sizeof(clantag_block_filter));
+	team_index_pass_filter = view_as<ArrayList>(filters).Get(0);
+	view_as<ArrayList>(filters).GetString(1, clantag_block_filter, sizeof(clantag_block_filter));
 
 	Clan clan1, clan2;
 	g_rClans.GetArray(index1, clan1, sizeof(clan1));
@@ -522,17 +563,17 @@ int SortClans(int index1, int index2, Handle array, Handle filters)
 
 	if (team1_members == team2_members)
 	{
-		view_as<DataPack>(filters).WriteCell(0);
+		view_as<ArrayList>(filters).Push(0);
 		return 0;
 	}
 
 	if (team1_members > team2_members)
 	{
-		view_as<DataPack>(filters).WriteCell(team1_members);
+		view_as<ArrayList>(filters).Push(team1_members);
 		return -1;
 	}
 
-	view_as<DataPack>(filters).WriteCell(team2_members);
+	view_as<ArrayList>(filters).Push(team2_members);
 	return 1;
 }
 
