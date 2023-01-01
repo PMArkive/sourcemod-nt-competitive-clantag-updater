@@ -56,7 +56,7 @@ Team entry syntax:
 
 	// Optional, for setting whether the clantag is case sensitive.
 	// Default is off ("0") if this is not specified.
-	// To enable for a specific team's tag, use the value ("1").
+	// To enable for a specific team's tag, use the value "1" instead of "0".
 	// Used for avoiding false positives with clantags that clash with common player
 	// names; for example tag "JAM" would match with a player named "Jam Lover",
 	// unless case specificity is enabled. Note however that tags must be
