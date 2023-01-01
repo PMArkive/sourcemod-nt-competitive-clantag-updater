@@ -5,7 +5,7 @@
 #pragma newdecls required
 
 
-#define PLUGIN_VERSION "0.5.0"
+#define PLUGIN_VERSION "0.6.0"
 
 #define NEO_MAX_PLAYERS 32
 
@@ -77,6 +77,26 @@ enum struct Clan {
 		char name_sans_clantag[MAX_NAME_LENGTH];
 		strcopy(name_sans_clantag, sizeof(name_sans_clantag),
 			client_name[pos + strlen(this.tag)]);
+
+		int l = strlen(name_sans_clantag);
+		bool had_whitespace = false;
+		for (int i = 0; i < l; ++i)
+		{
+			if (IsCharSpace(name_sans_clantag[i]))
+			{
+				had_whitespace = true;
+				break;
+			}
+		}
+		// If there was no whitespace separator between the tag and the name,
+		// this is not a valid clantag. We enforce whitespace separation
+		// because otherwise names like "James" would clash with the
+		// clantag "Jam", causing hard-to-avoid false positives.
+		if (!had_whitespace)
+		{
+			return false;
+		}
+
 		TrimString(name_sans_clantag);
 		if (strlen(name_sans_clantag) == 0)
 		{
