@@ -1,6 +1,13 @@
 # sourcemod-nt-competitive-clantag-updater
 A complementary SM plugin for the Neotokyo competitive plugin. Sets competitive team names automatically based on clantags.
 
+The team names are updated on:
+* Player name change
+* Player disconnect
+* Player join (Jinrai/NSF)
+
+The names will only be updated when a nt_competitive match is not live.
+
 # Requirements
 
 ## Building
