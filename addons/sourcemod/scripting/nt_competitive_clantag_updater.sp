@@ -513,15 +513,8 @@ void UpdateTeamNames(bool force = false)
 		// Truncate any preallocated uninitialized data.
 		filters.Resize(num_initialized_indices);
 
-		// Erase the "header" pushed initially,
-		// because we want to sort all the values our custom sort
-		// has pushed to the end of the array.
-		filters.Erase(0);
-		filters.Erase(0);
-		filters.Erase(0);
+		SortADTArrayCustom(filters, SortFilters, filters);
 
-		filters.Sort(Sort_Descending, Sort_Integer);
-		PrintToServer("filters: %d + 2 == %d", filters.Length, filters.Length+2);
 		// Amount of clan members in the top sorted team.
 		if (filters.Length == 0 || filters.Get(0) == 0)
 		{
@@ -562,6 +555,34 @@ void UpdateTeamNames(bool force = false)
 		}
 	}
 	delete filters;
+}
+
+// TODO: can be access "array" instead of passing the optional "filters" as data param?
+//
+// Sort comparison function for ADT Array elements of the filters array.
+// This is a descending integer sort, but we ignore the "header" fields
+// in the container's 0-3 (inclusive) range.
+//
+// We use this custom sort because otherwise we'd have to remove the header
+// data from the beginning of the container, which would involve moving
+// the entire container's memory, which is slower.
+//
+// Returns: qsort return value
+int SortFilters(int index1, int index2, Handle array, Handle filters)
+{
+	if (NumInRange(index1, 0, 3))
+	{
+		return NumInRange(index2, 0, 3) ? 0 : index2;
+	}
+	else if (NumInRange(index2, 0, 3))
+	{
+		return index1;
+	}
+
+	int val1 = view_as<ArrayList>(filters).Get(index1);
+	int val2 = view_as<ArrayList>(filters).Get(index2);
+
+	return val1 > val2 ? index1 : index2;
 }
 
 // Sort comparison function for ADT Array elements of the Clans array.
@@ -645,10 +666,12 @@ int SortClans(int index1, int index2, Handle array, Handle filters)
 		ret = 1;
 	}
 
+	// Write in-place if it fits
 	if (num_indices_used < ClansArrayListPreallocSize())
 	{
 		view_as<ArrayList>(filters).Set(num_indices_used, push_result);
 	}
+	// Else, grow the container as required
 	else
 	{
 		view_as<ArrayList>(filters).Push(push_result);
