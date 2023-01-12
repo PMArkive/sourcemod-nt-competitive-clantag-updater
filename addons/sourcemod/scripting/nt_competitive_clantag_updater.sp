@@ -451,11 +451,11 @@ and team tag must be at least %d characters long \
 	return num_clans;
 }
 
-static int ClansArrayListPreallocSize()
+static int ClansArrayFiltersPreallocSize()
 {
 	if (g_rClans == null)
 	{
-		LogError("Requested ClansArrayListPreallocSize while g_rClans == null");
+		LogError("Requested ClansArrayFiltersPreallocSize while g_rClans == null");
 		return 0;
 	}
 	// Preallocate for teams + 3 for sorting + 3 for the "header fields".
@@ -497,7 +497,7 @@ void UpdateTeamNames(bool force = false)
 	for (int team = TEAM_JINRAI; team <= TEAM_NSF; ++team)
 	{
 		filters.Clear();
-		filters.Resize(ClansArrayListPreallocSize());
+		filters.Resize(ClansArrayFiltersPreallocSize());
 
 		filters.Set(0, 3); // Size of the "headers" data
 		filters.Set(1, team);  // Only look for members in this team
@@ -672,7 +672,7 @@ int SortClans(int index1, int index2, Handle array, Handle filters)
 	}
 
 	// Write in-place if it fits
-	if (num_indices_used < ClansArrayListPreallocSize())
+	if (num_indices_used < ClansArrayFiltersPreallocSize())
 	{
 		view_as<ArrayList>(filters).Set(num_indices_used, push_result);
 	}
