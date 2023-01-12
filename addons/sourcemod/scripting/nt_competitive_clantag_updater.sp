@@ -516,7 +516,10 @@ void UpdateTeamNames(bool force = false)
 		SortADTArrayCustom(filters, SortFilters, filters);
 
 		// Amount of clan members in the top sorted team.
-		if (filters.Length == 0 || filters.Get(0) == 0)
+		// Subtracting the "header" data length from the filters.Length check,
+		// because we're interested in the size of the sorted team data,
+		// not the size of the entire container.
+		if ((filters.Length - 3) <= 0 || filters.Get(0) == 0)
 		{
 			// If we got none, the team has no clan in it.
 			continue;
@@ -563,15 +566,17 @@ void UpdateTeamNames(bool force = false)
 // This is a descending integer sort, but we ignore the "header" fields
 // in the container's 0-3 (inclusive) range.
 //
-// We use this custom sort because otherwise we'd have to remove the header
+// Using this custom sort because otherwise we'd have to remove the header
 // data from the beginning of the container, which would involve moving
-// the entire container's memory, which is slower.
+// the entire container's memory (which is slow).
 //
 // Returns: qsort return value
 int SortFilters(int index1, int index2, Handle array, Handle filters)
 {
+	// 0-3 (inclusive) is the header range we want to ignore.
 	if (NumInRange(index1, 0, 3))
 	{
+		// Favour whichever index is not in header range, or don't reorder otherwise.
 		return NumInRange(index2, 0, 3) ? 0 : index2;
 	}
 	else if (NumInRange(index2, 0, 3))
