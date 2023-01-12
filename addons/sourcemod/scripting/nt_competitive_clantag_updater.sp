@@ -383,13 +383,16 @@ int ReadClanConfig()
 			version, CLANTAGS_CFG_VERSION);
 	}
 
+// Estimating to get this many clans, at most.
+// We pre-allocate this amount to avoid needless memory copies,
+// but will still grow to accommodate more, if necessary.
+#define ESTIMATED_MAX_CLANS 16
+
 	if (g_rClans == null)
 	{
-		// Estimate 16 teams max initially.
-		// Since this is a dynamic array, it'll grow to accomodate as needed.
-		g_rClans = new ArrayList(sizeof(Clan), 16);
+		g_rClans = new ArrayList(sizeof(Clan), ESTIMATED_MAX_CLANS);
 	}
-	g_rClans.Clear();
+
 	int num_clans = 0;
 	if (kv.JumpToKey("team"))
 	{
@@ -414,11 +417,22 @@ and team tag must be at least %d characters long \
 			bool case_sensitive = (kv.GetNum("case_sensitive") == 0) ? false : true;
 
 			InitializeClan(c, name, tag, case_sensitive);
-			g_rClans.PushArray(c, sizeof(c));
 
+			// Write to our current memory if it can fit.
+			if (num_clans < ESTIMATED_MAX_CLANS)
+			{
+				g_rClans.SetArray(num_clans, c);
+			}
+			// But if not, grow the container to fit.
+			else
+			{
+				g_rClans.PushArray(c);
+			}
 			++num_clans;
 		} while (kv.GotoNextKey());
 	}
+	// Truncate any leftover pre-allocated uninitialized data.
+	g_rClans.Resize(num_clans);
 
 	delete kv;
 	return num_clans;
