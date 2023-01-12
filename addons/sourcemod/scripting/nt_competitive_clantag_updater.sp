@@ -497,9 +497,9 @@ void UpdateTeamNames(bool force = false)
 	for (int team = TEAM_JINRAI; team <= TEAM_NSF; ++team)
 	{
 		filters.Clear();
+		filters.Resize(ClansArrayListPreallocSize());
 
-		filters.Resize(g_rClans.Length + 6);
-		filters.Set(0, ClansArrayListPreallocSize());
+		filters.Set(0, 3); // Size of the "headers" data
 		filters.Set(1, team);  // Only look for members in this team
 		filters.SetString(2, ignore_clan);  // Don't look for this clan (skipped if empty)
 		SortADTArrayCustom(g_rClans, SortClans, filters);
@@ -547,8 +547,7 @@ void UpdateTeamNames(bool force = false)
 			// Only announce new team name if it was actually changed.
 			if (!StrEqual(((team == TEAM_NSF) ? previous_team_name_nsf : previous_team_name_jinrai), clan.name))
 			{
-				ConVar team_cvar = (team == TEAM_NSF) ? g_hCvar_NsfName : g_hCvar_JinraiName;
-				team_cvar.SetString(clan.name);
+				SetConVarString((team == TEAM_NSF) ? g_hCvar_NsfName : g_hCvar_JinraiName, clan.name);
 				PrintToChatAll("%s Detected a team in %s. Setting the team name as: %s",
 					g_sTag,
 					(team == TEAM_NSF) ? "NSF" : "Jinrai",
