@@ -164,6 +164,10 @@ public void OnPluginStart()
 		"Reload the clantags config from disk.");
 	RegAdminCmd(CMD_LIST_CLANS, Cmd_ListClantags, ADMFLAG_GENERIC,
 		"List current clantag bindings for confirming correctness.");
+#if DEBUG
+	RegAdminCmd("sm_update_teamnames", Cmd_UpdateTeamNames, ADMFLAG_GENERIC,
+		"Debug command. Forcibly update the team names.");
+#endif
 
 	if (!HookEventEx("player_team", Event_PlayerTeam, EventHookMode_Post)) {
 		SetFailState("Failed to hook event \"player_team\"");
@@ -302,6 +306,15 @@ public Action Cmd_ListClantags(int client, int argc)
 	return Plugin_Handled;
 }
 
+#if DEBUG
+public Action Cmd_UpdateTeamNames(int client, int argc)
+{
+	ReplyToCommand(client, "%s Running UpdateTeamNames...", g_sTag);
+	UpdateTeamNames(true);
+	return Plugin_Handled;
+}
+#endif
+
 bool IsPlayerTeam(int team)
 {
 	return team == TEAM_JINRAI || team == TEAM_NSF;
@@ -438,6 +451,17 @@ and team tag must be at least %d characters long \
 	return num_clans;
 }
 
+static int ClansArrayListPreallocSize()
+{
+	if (g_rClans == null)
+	{
+		LogError("Requested ClansArrayListPreallocSize while g_rClans == null");
+		return 0;
+	}
+	// Preallocate for teams + 3 for sorting + 3 for the "header fields".
+	return g_rClans.Length + 6;
+}
+
 // Looks for clan tags from both teams' player names, and tries to detect which teams they represent.
 // If clans were found, updates the nt_competitive plugin cvar clan tags accordingly.
 // If the optional "force" boolean is set, will process the update no matter what.
@@ -473,19 +497,31 @@ void UpdateTeamNames(bool force = false)
 	for (int team = TEAM_JINRAI; team <= TEAM_NSF; ++team)
 	{
 		filters.Clear();
-		filters.Push(team);  // Only look for members in this team
-		filters.PushString(ignore_clan);  // Don't look for this clan (skipped if empty)
+
+		filters.Resize(g_rClans.Length + 6);
+		filters.Set(0, ClansArrayListPreallocSize());
+		filters.Set(1, team);  // Only look for members in this team
+		filters.SetString(2, ignore_clan);  // Don't look for this clan (skipped if empty)
 		SortADTArrayCustom(g_rClans, SortClans, filters);
 #if DEBUG
 		g_rClans.GetArray(0, clan, sizeof(clan));
 		PrintToServer("Team %s: %s", (team == TEAM_NSF) ? "NSF" : "Jinrai", clan.tag);
 #endif
-		// Erase the two filters pushed initially,
+
+		// How many values did we push?
+		int num_initialized_indices = filters.Get(0);
+		// Truncate any preallocated uninitialized data.
+		filters.Resize(num_initialized_indices);
+
+		// Erase the "header" pushed initially,
 		// because we want to sort all the values our custom sort
 		// has pushed to the end of the array.
 		filters.Erase(0);
 		filters.Erase(0);
+		filters.Erase(0);
+
 		filters.Sort(Sort_Descending, Sort_Integer);
+		PrintToServer("filters: %d + 2 == %d", filters.Length, filters.Length+2);
 		// Amount of clan members in the top sorted team.
 		if (filters.Length == 0 || filters.Get(0) == 0)
 		{
@@ -553,11 +589,12 @@ void UpdateTeamNames(bool force = false)
 // Returns: qsort return value
 int SortClans(int index1, int index2, Handle array, Handle filters)
 {
-	int team_index_pass_filter;
+	int num_indices_used, team_index_pass_filter;
 	char clantag_block_filter[MAX_CLAN_TAG_LEN];
 
-	team_index_pass_filter = view_as<ArrayList>(filters).Get(0);
-	view_as<ArrayList>(filters).GetString(1, clantag_block_filter, sizeof(clantag_block_filter));
+	num_indices_used = view_as<ArrayList>(filters).Get(0);
+	team_index_pass_filter = view_as<ArrayList>(filters).Get(1);
+	view_as<ArrayList>(filters).GetString(2, clantag_block_filter, sizeof(clantag_block_filter));
 
 	Clan clan1, clan2;
 	g_rClans.GetArray(index1, clan1, sizeof(clan1));
@@ -595,20 +632,31 @@ int SortClans(int index1, int index2, Handle array, Handle filters)
 		}
 	}
 
-	if (team1_members == team2_members)
-	{
-		view_as<ArrayList>(filters).Push(0);
-		return 0;
-	}
-
+	// Sort result defaults to zero if neither had more players than the other.
+	int ret = 0;
+	int push_result = 0;
 	if (team1_members > team2_members)
 	{
-		view_as<ArrayList>(filters).Push(team1_members);
-		return -1;
+		push_result = team1_members;
+		ret = -1;
+	}
+	else if (team2_members > team1_members)
+	{
+		push_result = team2_members;
+		ret = 1;
 	}
 
-	view_as<ArrayList>(filters).Push(team2_members);
-	return 1;
+	if (num_indices_used < ClansArrayListPreallocSize())
+	{
+		view_as<ArrayList>(filters).Set(num_indices_used, push_result);
+	}
+	else
+	{
+		view_as<ArrayList>(filters).Push(push_result);
+	}
+
+	view_as<ArrayList>(filters).Set(0, num_indices_used + 1);
+	return ret;
 }
 
 // For number num, returns whether it is bound inside the range (inclusive).
