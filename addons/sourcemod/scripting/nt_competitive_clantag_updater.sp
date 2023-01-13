@@ -42,6 +42,70 @@ ConVar g_hCvar_JinraiName = null, g_hCvar_NsfName = null;
 ConVar g_hCvar_ClantagUpdateMode = null;
 ConVar g_hCvar_ConfigPath = null;
 
+// Returns whether client_name matches the clan_tag pattern.
+// The clantag text is allowed to be offset from the name start
+// by max_decorator_offset chars, at most. Eg: "<(CLAN)>" would require
+// an offset of at least two for the "CLAN" part to be detected.
+bool IsMemberOfClan(const char[] client_name,
+	const char[] clan_tag,
+	bool case_sensitive = false,
+	int max_decorator_offset = 2)
+{
+	// Clantag must be in the beginning(ish) of the name.
+	int pos = StrContains(client_name, clan_tag, case_sensitive);
+	if (!NumInRange(pos, 0, max_decorator_offset))
+	{
+		return false;
+	}
+
+	char name_sans_clantag[MAX_NAME_LENGTH];
+	strcopy(name_sans_clantag, sizeof(name_sans_clantag),
+		client_name[pos + strlen(clan_tag)]);
+
+	// If there was no whitespace separator between the tag and the name,
+	// this is not a valid clantag. We enforce whitespace separation
+	// because otherwise names like "James" would clash with the
+	// clantag "Jam", causing hard-to-avoid false positives.
+	int l = strlen(name_sans_clantag);
+	bool had_whitespace = false;
+	for (int i = 0; i < l; ++i)
+	{
+		if (IsCharSpace(name_sans_clantag[i]))
+		{
+			had_whitespace = true;
+			break;
+		}
+	}
+	if (!had_whitespace)
+	{
+		return false;
+	}
+
+	// Name must include characters other than just the clantag,
+	// because otherwise a player whose name exactly matches
+	// some team's clantag will trigger a false positive.
+	TrimString(name_sans_clantag);
+	if (strlen(name_sans_clantag) == 0)
+	{
+		return false;
+	}
+
+	// Can't form decorative surrounding elements from alphanumerics,
+	// because it leads to too many false positives.
+	// For example, player name "asd" would match
+	// the clantag "sd" otherwise.
+	for (int i = 0; i < pos; ++i)
+	{
+		if (IsCharAlpha(client_name[i]) ||
+			IsCharNumeric(client_name[i]))
+		{
+			return false;
+		}
+	}
+
+	return true;
+}
+
 enum struct Clan {
 	char name[MAX_CLAN_NAME_LEN];
 	char tag[MAX_CLAN_TAG_LEN];
@@ -52,10 +116,7 @@ enum struct Clan {
 	bool case_sensitive;
 
 	// For a given valid, connected client index, returns whether the client's
-	// name matches this clan's clantag pattern.
-	// The clantag text is allowed to be offset from the name start
-	// by max_decorator_offset chars, at most. Eg: "<(CLAN)>" would require
-	// an offset of at least two for the "CLAN" part to be detected.
+	// is a member of this clan, according to the IsMemberOfClan detection rules.
 	bool IsMember(int client, int max_decorator_offset = 2)
 	{
 		char client_name[MAX_NAME_LENGTH + 1];
@@ -64,59 +125,7 @@ enum struct Clan {
 			return false;
 		}
 
-		// Clantag must be in the beginning(ish) of the name.
-		int pos = StrContains(client_name, this.tag, this.case_sensitive);
-		if (!NumInRange(pos, 0, max_decorator_offset))
-		{
-			return false;
-		}
-
-		char name_sans_clantag[MAX_NAME_LENGTH];
-		strcopy(name_sans_clantag, sizeof(name_sans_clantag),
-			client_name[pos + strlen(this.tag)]);
-
-		// If there was no whitespace separator between the tag and the name,
-		// this is not a valid clantag. We enforce whitespace separation
-		// because otherwise names like "James" would clash with the
-		// clantag "Jam", causing hard-to-avoid false positives.
-		int l = strlen(name_sans_clantag);
-		bool had_whitespace = false;
-		for (int i = 0; i < l; ++i)
-		{
-			if (IsCharSpace(name_sans_clantag[i]))
-			{
-				had_whitespace = true;
-				break;
-			}
-		}
-		if (!had_whitespace)
-		{
-			return false;
-		}
-
-		// Name must include characters other than just the clantag,
-		// because otherwise a player whose name exactly matches
-		// some team's clantag will trigger a false positive.
-		TrimString(name_sans_clantag);
-		if (strlen(name_sans_clantag) == 0)
-		{
-			return false;
-		}
-
-		// Can't form decorative surrounding elements from alphanumerics,
-		// because it leads to too many false positives.
-		// For example, player name "asd" would match
-		// the clantag "sd" otherwise.
-		for (int i = 0; i < pos; ++i)
-		{
-			if (IsCharAlpha(client_name[i]) ||
-				IsCharNumeric(client_name[i]))
-			{
-				return false;
-			}
-		}
-
-		return true;
+		return IsMemberOfClan(client_name, this.tag, this.case_sensitive);
 	}
 
 	bool HasAnyMembers()
@@ -152,7 +161,7 @@ public void OnPluginStart()
 
 	g_hCvar_ClantagUpdateMode = CreateConVar("sm_competitive_clantag_mode", "3",
 		"Operation mode. 0: disabled, 1: only manual \"sm_team\" clantag setting, 2: only automatic clantag setting, 3: allow both manual and automatic clantag setting.",
-		_, true, CLANTAG_MODE_DISABLED * 1.0, true, LARGEST_CLANTAG_MODE * 1.0);
+		_, true, float(CLANTAG_MODE_DISABLED), true, float(LARGEST_CLANTAG_MODE));
 
 	g_hCvar_ConfigPath = CreateConVar("sm_competitive_clantag_cfg_file", "clantags.cfg",
 		"Clantags config file name. Relative to SourceMod's \"configs\" folder. Must exist. Changing this value will force a clantags config reload.");
