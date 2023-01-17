@@ -4,7 +4,7 @@ A complementary SM plugin for the Neotokyo competitive plugin. Sets competitive 
 The team names are updated on:
 * Player name change
 * Player disconnect
-* Player join (Jinrai/NSF)
+* Player join/leave from a playing team (Jinrai/NSF)
 
 The names will only be updated when a nt_competitive match is not live.
 
