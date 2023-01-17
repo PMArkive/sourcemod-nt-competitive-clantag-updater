@@ -6,7 +6,7 @@ The team names are updated on:
 * Player disconnect
 * Player join/leave from a playing team (Jinrai/NSF)
 
-The names will only be updated when a nt_competitive match is not live.
+The team names will only be updated when a nt_competitive match is not live.
 
 # Requirements
 
