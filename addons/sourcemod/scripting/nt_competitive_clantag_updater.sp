@@ -437,7 +437,7 @@ void UpdateTeamNames(bool force = false)
 		}
 		// Because we're using relatively heavy dynamic array based structures,
 		// this name parsing is not super fast. So only do it when there isn't
-		// a competitive game live to minimize the changes of introducing a lagspike.
+		// a competitive game live to minimize the chances of introducing a lagspike.
 		if (Competitive_IsLive())
 		{
 			return;
