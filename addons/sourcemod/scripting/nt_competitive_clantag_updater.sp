@@ -536,7 +536,7 @@ void UpdateTeamNames(bool force = false)
 //       multiple times, so these cells will not directly relate to the
 //       sorted Clan array.
 //
-// Returns: qsort return value
+// Returns: qsort compar-like value
 int SortClans(int index1, int index2, Handle array, Handle filters)
 {
 	int team_index_pass_filter;
