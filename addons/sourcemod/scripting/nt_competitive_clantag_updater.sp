@@ -5,7 +5,7 @@
 #pragma newdecls required
 
 
-#define PLUGIN_VERSION "0.6.1"
+#define PLUGIN_VERSION "1.0.0"
 
 #define NEO_MAX_PLAYERS 32
 
